@@ -1,4 +1,7 @@
 /// A token represents a single part of a statement inside the programming language
+#[derive(Eq, PartialEq)]
+#[derive(Clone)]
+#[derive(Debug)]
 pub enum Token {
     // Represents an unknown part inside a program
     Illegal,
@@ -27,7 +30,7 @@ pub enum Token {
     // Operators
     Assign,
     Add,
-    Sub,
+    Subtract,
     Multiply,
     Divide,
     Modular,
