@@ -3,7 +3,7 @@ use colored::Colorize;
 use crate::lexer::Lexer;
 
 pub fn run_repl() {
-    println!("{}", "Welcome to p_lang! Just enter your commands: ".bright_blue());
+    println!("{}", "Welcome to p_lang! Just enter your commands: ".bright_green());
     loop {
         let program = read_from_stdin(">> ");
         if &program == &"exit" { break }
