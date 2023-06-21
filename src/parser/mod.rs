@@ -1,12 +1,14 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 use anyhow::bail;
-use crate::error::ParseError::ExpectedButFound;
+use crate::error::ParseError::{ExpectedButFound, ExpectedTokenButFound, RanOutOfTokens, UnexpectedTokenFound};
 use crate::lexer::token::Token;
 use crate::parser::ast::expression::Expression;
 use crate::parser::ast::statement::Statement;
+use crate::parser::precedences::Precedences;
 
 pub mod ast;
+pub mod precedences;
 
 pub struct Parser {
     tokens: Peekable<IntoIter<Token>>,
@@ -41,23 +43,29 @@ impl Parser {
     pub fn parse_let_statement(&mut self) -> anyhow::Result<Statement> {
         self.tokens.next();
 
-        let name = match self.tokens.next().ok_or(ExpectedButFound("Identifier".to_string(), Token::EOF))? {
+        let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
             Token::Identifier(val) => val,
             token => bail!(ExpectedButFound("Identifier".to_string(), token)),
         };
 
-        let value = Box::new(self.parse_expression()?);
+        self.assert_next_token(Token::Assign)?;
+
+        let value = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::Semicolon)?;
 
         Ok(Statement::Let {
             name,
-            value
+            value,
         })
     }
 
     pub fn parse_return_statement(&mut self) -> anyhow::Result<Statement> {
         self.tokens.next();
 
-        let value = Box::new(self.parse_expression()?);
+        let value = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::Semicolon)?;
 
         Ok(Statement::Return {
             value
@@ -66,14 +74,165 @@ impl Parser {
 
     pub fn parse_function_statement(&mut self) -> anyhow::Result<Statement> {
         self.tokens.next();
+
+        self.assert_next_token(Token::Semicolon)?;
+
         todo!()
     }
 
     pub fn parse_expression_statement(&mut self) -> anyhow::Result<Statement> {
+        let value = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::Semicolon)?;
+
+        Ok(Statement::Expression {
+            value
+        })
+    }
+
+    pub fn parse_expression(&mut self, precedences: Precedences) -> anyhow::Result<Expression> {
+        let mut left_expr = match self.tokens.next().ok_or(RanOutOfTokens)? {
+            Token::Identifier(name) => Expression::Identifier { name },
+            Token::Integer(value) => Expression::Integer { value },
+            Token::Float(value) => Expression::Float { value },
+            Token::String(value) => Expression::String { value },
+            Token::Boolean(value) => Expression::Boolean { value },
+            Token::Subtract => self.parse_prefix_expression(Token::Subtract)?,
+            Token::Invert => self.parse_prefix_expression(Token::Invert)?,
+            Token::LParent => self.parse_grouped_expression()?,
+            Token::If => self.parse_if_expression()?,
+            Token::While => self.parse_while_expression()?,
+            Token::LBracket => self.parse_array_expression()?,
+            token => bail!(UnexpectedTokenFound(token))
+        };
+
+        while let Some(token) = self.tokens.peek() {
+            println!("{:?}", token);
+            if token.equal_variant(&Token::Semicolon) || precedences >= token.precedence() { break }
+            let token = self.tokens.next().unwrap();
+            let infix = match token {
+                Token::Add => self.parse_infix_expression(left_expr, Token::Add),
+                Token::Subtract => self.parse_infix_expression(left_expr, Token::Subtract),
+                Token::Multiply => self.parse_infix_expression(left_expr, Token::Multiply),
+                Token::Divide => self.parse_infix_expression(left_expr, Token::Divide),
+                Token::Modular => self.parse_infix_expression(left_expr, Token::Modular),
+                Token::Equal => self.parse_infix_expression(left_expr, Token::Equal),
+                Token::NotEqual => self.parse_infix_expression(left_expr, Token::NotEqual),
+                Token::LessThan => self.parse_infix_expression(left_expr, Token::LessThan),
+                Token::GreaterThan => self.parse_infix_expression(left_expr, Token::GreaterThan),
+                Token::LessThanEqual => self.parse_infix_expression(left_expr, Token::LessThanEqual),
+                Token::GreaterThanEqual => self.parse_infix_expression(left_expr, Token::GreaterThanEqual),
+                Token::Or => self.parse_infix_expression(left_expr, Token::Or),
+                Token::And => self.parse_infix_expression(left_expr, Token::And),
+                Token::LParent => self.parse_call_expression(left_expr),
+                Token::Assign => self.parse_assign_expression(left_expr),
+                _ => { return Ok(left_expr); }
+            }?;
+
+            left_expr = infix;
+        }
+
+        Ok(left_expr)
+    }
+
+    pub fn parse_grouped_expression(&mut self) -> anyhow::Result<Expression> {
+        let expr = self.parse_expression(Precedences::Lowest);
+
+        self.assert_next_token(Token::RParent)?;
+
+        return expr;
+    }
+
+    pub fn parse_array_expression(&mut self) -> anyhow::Result<Expression> {
         todo!()
     }
 
-    pub fn parse_expression(&mut self) -> anyhow::Result<Expression> {
+    pub fn parse_prefix_expression(&mut self, prefix: Token) -> anyhow::Result<Expression> {
+        let value = Box::new(self.parse_expression(Precedences::Prefix)?);
+        Ok(Expression::Prefix {
+            prefix,
+            value
+        })
+    }
+
+    pub fn parse_infix_expression(&mut self, left: Expression, infix: Token) -> anyhow::Result<Expression> {
+        let precedence = infix.precedence();
+        let right = self.parse_expression(precedence)?;
+        Ok(Expression::Infix {
+            left: Box::new(left),
+            operation: infix,
+            right: Box::new(right)
+        })
+    }
+
+    pub fn parse_assign_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
         todo!()
+    }
+
+    pub fn parse_call_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
+        todo!()
+    }
+
+    pub fn parse_if_expression(&mut self) -> anyhow::Result<Expression> {
+        self.assert_next_token(Token::LParent)?;
+
+        let condition = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::RParent)?;
+
+        let consequence = Box::new(self.parse_block_expression()?);
+
+        if let Some(&Token::Else) = self.tokens.peek() {
+            self.assert_next_token(Token::Else)?;
+            let alternative = Box::new(self.parse_block_expression()?);
+            Ok(Expression::If {
+                condition,
+                consequence,
+                alternative: Some(alternative),
+            })
+        } else {
+            Ok(Expression::If {
+                condition,
+                consequence,
+                alternative: None,
+            })
+        }
+    }
+
+    pub fn parse_while_expression(&mut self) -> anyhow::Result<Expression> {
+        self.assert_next_token(Token::LParent)?;
+
+        let condition = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::RParent)?;
+
+        let consequence = Box::new(self.parse_block_expression()?);
+
+        Ok(Expression::While {
+            condition,
+            consequence
+        })
+    }
+
+    pub fn parse_block_expression(&mut self) -> anyhow::Result<Expression> {
+        self.assert_next_token(Token::LBrace)?;
+
+        let mut statements  = vec![];
+
+        while let Some(token) = self.tokens.next() {
+            if token.equal_variant(&Token::RBrace) { break }
+            statements.push(Box::new(self.parse_statement()?));
+        }
+
+        Ok(Expression::Block {
+            statements
+        })
+    }
+
+    pub fn assert_next_token(&mut self, token: Token) -> anyhow::Result<()> {
+        if let Some(cur) = self.tokens.next() {
+            if cur != token { bail!(ExpectedTokenButFound(token, cur)) }
+        } else { bail!(RanOutOfTokens) }
+        Ok(())
     }
 }

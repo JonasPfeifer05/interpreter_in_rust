@@ -51,6 +51,7 @@ pub enum Token {
     Let,
 
     If,
+    Else,
     While,
 
     IntegerType,
@@ -59,4 +60,10 @@ pub enum Token {
     BooleanType,
 
     Return,
+}
+
+impl Token {
+    pub fn equal_variant(&self, other: &Token) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+    }
 }

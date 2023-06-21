@@ -1,11 +1,11 @@
 use crate::lexer::token::Token;
+use crate::parser::ast::statement::Statement;
 
 #[derive(Eq, PartialEq)]
 #[derive(Debug)]
 pub enum Expression {
     Identifier {
         name: String,
-        value: Box<Expression>
     },
     Integer {
         value: String,
@@ -20,7 +20,7 @@ pub enum Expression {
         value: String,
     },
     Prefix {
-        operation: Token,
+        prefix: Token,
         value: Box<Expression>,
     },
     Infix {
@@ -57,6 +57,6 @@ pub enum Expression {
         values: Vec<Box<Expression>>
     },
     Block {
-        expressions: Vec<Box<Expression>>
+        statements: Vec<Box<Statement>>
     },
 }

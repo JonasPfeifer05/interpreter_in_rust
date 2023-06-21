@@ -1,6 +1,7 @@
 use std::io::{stdin, stdout, Write};
 use colored::Colorize;
 use crate::lexer::Lexer;
+use crate::parser::Parser;
 
 pub fn run_repl() {
     println!("{}", "Welcome to p_lang! Just enter your commands: ".bright_green());
@@ -10,7 +11,11 @@ pub fn run_repl() {
 
         let mut lexer = Lexer::from_string(program);
         let tokens = lexer.lex();
-        println!("{}", format!("{:?}", tokens).bright_blue())
+        println!("{}", format!("{:?}", tokens).bright_blue());
+
+        let mut parser = Parser::from_tokens(tokens);
+        let result = parser.parse();
+        println!("{:#?}", result);
     }
 }
 
