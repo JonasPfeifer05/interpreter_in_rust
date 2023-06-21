@@ -1,6 +1,7 @@
 pub mod token;
 
 use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
 use crate::lexer::token::Token;
 
@@ -29,11 +30,17 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn from_string(program: String) -> Lexer {
-        todo!()
+        Self {
+            program,
+            keywords: keyword_map(),
+        }
     }
 
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Lexer {
-        todo!()
+    pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Lexer> {
+        Ok(Self {
+            program: fs::read_to_string(path)?,
+            keywords: keyword_map(),
+        })
     }
 
     pub fn lex(&mut self) -> Vec<Token> {
