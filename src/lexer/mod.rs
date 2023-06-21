@@ -28,7 +28,7 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn from_string() -> Lexer {
+    pub fn from_string(program: String) -> Lexer {
         todo!()
     }
 
