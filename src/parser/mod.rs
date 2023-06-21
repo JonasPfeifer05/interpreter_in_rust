@@ -84,18 +84,15 @@ impl Parser {
 
         let mut parameter = vec![];
 
-        while let Some(token) = self.tokens.peek() {
-            if token.equal_variant(&Token::RParent) { break }
-
+        let mut arguments = vec![];
+        if let Some(&Token::RParent) = self.tokens.peek() {}
+        else {
             let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
                 Token::Identifier(val) => val,
                 token => bail!(ExpectedButFound("Identifier".to_string(), token))
             };
-
             self.assert_next_token(Token::Colon)?;
-
             let typee = self.tokens.next().ok_or(RanOutOfTokens)?;
-
             match typee {
                 Token::IntegerType |
                 Token::FloatType |
@@ -103,8 +100,32 @@ impl Parser {
                 Token::BooleanType => {}
                 token => bail!(ExpectedButFound("Type".to_string(), token))
             }
+            arguments.push((name, typee));
 
-            parameter.push((name, typee));
+            while let Some(token) = self.tokens.peek() {
+                if token.equal_variant(&Token::RParent) { break }
+
+                self.assert_next_token(Token::Comma)?;
+
+                let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
+                    Token::Identifier(val) => val,
+                    token => bail!(ExpectedButFound("Identifier".to_string(), token))
+                };
+
+                self.assert_next_token(Token::Colon)?;
+
+                let typee = self.tokens.next().ok_or(RanOutOfTokens)?;
+
+                match typee {
+                    Token::IntegerType |
+                    Token::FloatType |
+                    Token::StringType |
+                    Token::BooleanType => {}
+                    token => bail!(ExpectedButFound("Type".to_string(), token))
+                }
+
+                parameter.push((name, typee));
+            }
         }
 
         self.assert_next_token(Token::RParent)?;
@@ -245,10 +266,14 @@ impl Parser {
         };
 
         let mut arguments = vec![];
-
-        while let Some(token) = self.tokens.peek() {
-            if token.equal_variant(&Token::RParent) { break; }
+        if let Some(&Token::RParent) = self.tokens.peek() {}
+        else {
             arguments.push(Box::new(self.parse_expression(Precedences::Lowest)?));
+            while let Some(token) = self.tokens.peek() {
+                if token.equal_variant(&Token::RParent) { break; }
+                self.assert_next_token(Token::Comma)?;
+                arguments.push(Box::new(self.parse_expression(Precedences::Lowest)?));
+            }
         }
 
         self.assert_next_token(Token::RParent)?;
