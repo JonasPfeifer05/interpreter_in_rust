@@ -1,6 +1,7 @@
 pub mod token;
 
 use std::collections::HashMap;
+use std::path::Path;
 use crate::lexer::token::Token;
 
 pub fn keyword_map() -> HashMap<String, Token> {
@@ -20,6 +21,22 @@ pub fn keyword_map() -> HashMap<String, Token> {
 
 /// Parses a Program into the individual Token
 pub struct Lexer {
+    program: String,
+
     // Stores all the keywords
     keywords: HashMap<String, Token>,
+}
+
+impl Lexer {
+    pub fn from_string() -> Lexer {
+        todo!()
+    }
+
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Lexer {
+        todo!()
+    }
+
+    pub fn lex(&mut self) -> Vec<Token> {
+        todo!()
+    }
 }
