@@ -1,1 +1,1 @@
-abc 123 123.3 "askdlk" true false ; : , . ( ) { } [ ] = + - * / % ! && || == != > < >= <= function let
+abc 123 123.3 "askdlk" true false ; : , . ( ) { } [ ] = + - * / % ! && || == != > < >= <= function let int float string bool

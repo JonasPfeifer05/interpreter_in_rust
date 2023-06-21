@@ -41,4 +41,9 @@ pub enum Token {
     // Keywords
     Function,
     Let,
+
+    IntegerType,
+    FloatType,
+    StringType,
+    BoolType,
 }
