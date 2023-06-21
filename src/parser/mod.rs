@@ -148,7 +148,6 @@ impl Parser {
         };
 
         while let Some(token) = self.tokens.peek() {
-            println!("{:?}", token);
             if token.equal_variant(&Token::Semicolon) || precedences >= token.precedence() { break; }
             let token = self.tokens.next().unwrap();
             let infix = match token {

@@ -43,6 +43,7 @@ impl Lexer {
         }
     }
 
+    #[allow(unused)]
     pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Lexer> {
         Ok(Self {
             program: fs::read_to_string(path)?.chars().collect::<Vec<char>>().into_iter().peekable(),
