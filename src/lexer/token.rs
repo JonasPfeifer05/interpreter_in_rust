@@ -5,6 +5,7 @@
 pub enum Token {
     // Represents an unknown part inside a program
     Illegal,
+    EOF,
 
     // Types
     Identifier(String),
