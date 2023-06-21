@@ -1,0 +1,12 @@
+function fibo(n: int): int {
+    if (n < 1) { ret Err("Cannot calculate the fibonacci number of an n less than one!"); }
+    let a: int = 0;
+    let b: int = 0;
+    while (n-2 > 0) {
+        let tmp: int = a + b;
+        a = b;
+        b = tmp;
+        n = n-1;
+    }
+    b
+}
