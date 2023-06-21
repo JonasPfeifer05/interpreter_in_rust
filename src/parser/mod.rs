@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 use anyhow::bail;
-use crate::error::ParseError::{ExpectedButFound, ExpectedTokenButFound, RanOutOfTokens, UnexpectedTokenFound};
+use crate::error::ParseError::{ExpectedButFound, ExpectedButFoundExpression, ExpectedTokenButFound, RanOutOfTokens, UnexpectedTokenFound};
 use crate::lexer::token::Token;
 use crate::parser::ast::expression::Expression;
 use crate::parser::ast::statement::Statement;
@@ -75,15 +75,55 @@ impl Parser {
     pub fn parse_function_statement(&mut self) -> anyhow::Result<Statement> {
         self.tokens.next();
 
-        self.assert_next_token(Token::Semicolon)?;
+        let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
+            Token::Identifier(val) => val,
+            token => bail!(ExpectedButFound("Identifier".to_string(), token))
+        };
 
-        todo!()
+        self.assert_next_token(Token::LParent)?;
+
+        let mut parameter = vec![];
+
+        while let Some(token) = self.tokens.peek() {
+            if token.equal_variant(&Token::RParent) { break }
+
+            let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
+                Token::Identifier(val) => val,
+                token => bail!(ExpectedButFound("Identifier".to_string(), token))
+            };
+
+            self.assert_next_token(Token::Colon)?;
+
+            let typee = self.tokens.next().ok_or(RanOutOfTokens)?;
+
+            match typee {
+                Token::IntegerType |
+                Token::FloatType |
+                Token::StringType |
+                Token::BooleanType => {}
+                token => bail!(ExpectedButFound("Type".to_string(), token))
+            }
+
+            parameter.push((name, typee));
+        }
+
+        self.assert_next_token(Token::RParent)?;
+
+        let body = Box::new(self.parse_block_expression()?);
+
+        Ok(Statement::Function {
+            name,
+            parameter,
+            body,
+        })
     }
 
     pub fn parse_expression_statement(&mut self) -> anyhow::Result<Statement> {
         let value = Box::new(self.parse_expression(Precedences::Lowest)?);
 
-        self.assert_next_token(Token::Semicolon)?;
+        if let Some(&Token::Semicolon) = self.tokens.peek() {
+            self.assert_next_token(Token::Semicolon)?;
+        }
 
         Ok(Statement::Expression {
             value
@@ -103,12 +143,13 @@ impl Parser {
             Token::If => self.parse_if_expression()?,
             Token::While => self.parse_while_expression()?,
             Token::LBracket => self.parse_array_expression()?,
+            Token::Error => self.parse_error_expression()?,
             token => bail!(UnexpectedTokenFound(token))
         };
 
         while let Some(token) = self.tokens.peek() {
             println!("{:?}", token);
-            if token.equal_variant(&Token::Semicolon) || precedences >= token.precedence() { break }
+            if token.equal_variant(&Token::Semicolon) || precedences >= token.precedence() { break; }
             let token = self.tokens.next().unwrap();
             let infix = match token {
                 Token::Add => self.parse_infix_expression(left_expr, Token::Add),
@@ -144,14 +185,33 @@ impl Parser {
     }
 
     pub fn parse_array_expression(&mut self) -> anyhow::Result<Expression> {
-        todo!()
+        if let Some(&Token::RBracket) = self.tokens.peek() {
+            return Ok(Expression::Array {
+                values: vec![],
+            });
+        }
+
+        let mut values = vec![Box::new(self.parse_expression(Precedences::Lowest)?)];
+
+        while let Some(token) = self.tokens.peek() {
+            if token.equal_variant(&Token::RBracket) {
+                self.tokens.next();
+                break;
+            }
+            self.assert_next_token(Token::Comma)?;
+            values.push(Box::new(self.parse_expression(Precedences::Lowest)?));
+        }
+
+        Ok(Expression::Array {
+            values
+        })
     }
 
     pub fn parse_prefix_expression(&mut self, prefix: Token) -> anyhow::Result<Expression> {
         let value = Box::new(self.parse_expression(Precedences::Prefix)?);
         Ok(Expression::Prefix {
             prefix,
-            value
+            value,
         })
     }
 
@@ -161,16 +221,43 @@ impl Parser {
         Ok(Expression::Infix {
             left: Box::new(left),
             operation: infix,
-            right: Box::new(right)
+            right: Box::new(right),
         })
     }
 
     pub fn parse_assign_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
-        todo!()
+        let name = match left {
+            Expression::Identifier { name } => name,
+            expr => bail!(ExpectedButFoundExpression("Identifier".to_string(), expr))
+        };
+
+        let value = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        Ok(Expression::Assign {
+            name,
+            value,
+        })
     }
 
     pub fn parse_call_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
-        todo!()
+        let name = match left {
+            Expression::Identifier { name } => name,
+            expr => bail!(ExpectedButFoundExpression("Identifier".to_string(), expr))
+        };
+
+        let mut arguments = vec![];
+
+        while let Some(token) = self.tokens.peek() {
+            if token.equal_variant(&Token::RParent) { break; }
+            arguments.push(Box::new(self.parse_expression(Precedences::Lowest)?));
+        }
+
+        self.assert_next_token(Token::RParent)?;
+
+        Ok(Expression::Call {
+            name,
+            arguments,
+        })
     }
 
     pub fn parse_if_expression(&mut self) -> anyhow::Result<Expression> {
@@ -210,22 +297,37 @@ impl Parser {
 
         Ok(Expression::While {
             condition,
-            consequence
+            consequence,
         })
     }
 
     pub fn parse_block_expression(&mut self) -> anyhow::Result<Expression> {
         self.assert_next_token(Token::LBrace)?;
 
-        let mut statements  = vec![];
+        let mut statements = vec![];
 
-        while let Some(token) = self.tokens.next() {
-            if token.equal_variant(&Token::RBrace) { break }
+        while let Some(token) = self.tokens.peek() {
+            if token.equal_variant(&Token::RBrace) {
+                self.tokens.next();
+                break;
+            }
             statements.push(Box::new(self.parse_statement()?));
         }
 
         Ok(Expression::Block {
             statements
+        })
+    }
+
+    pub fn parse_error_expression(&mut self) -> anyhow::Result<Expression> {
+        self.assert_next_token(Token::LParent)?;
+
+        let value = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::RParent)?;
+
+        Ok(Expression::Error {
+            value
         })
     }
 

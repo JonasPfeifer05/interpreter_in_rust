@@ -60,6 +60,8 @@ pub enum Token {
     BooleanType,
 
     Return,
+
+    Error,
 }
 
 impl Token {

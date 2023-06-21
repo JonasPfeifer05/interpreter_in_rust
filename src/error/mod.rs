@@ -1,5 +1,6 @@
 use thiserror::Error;
 use crate::lexer::token::Token;
+use crate::parser::ast::expression::Expression;
 
 #[derive(Error, Debug)]
 pub enum ParseError {
@@ -7,6 +8,8 @@ pub enum ParseError {
     RanOutOfTokens,
     #[error("Parser expected {0} but found {1:?}!")]
     ExpectedButFound(String,Token),
+    #[error("Parser expected {0} but found {1:?}!")]
+    ExpectedButFoundExpression(String,Expression),
     #[error("Parser expected {0:?} but found {1:?}!")]
     ExpectedTokenButFound(Token, Token),
     #[error("Found unexpected token: {0:?}!")]

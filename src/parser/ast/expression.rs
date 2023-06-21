@@ -37,11 +37,6 @@ pub enum Expression {
         condition: Box<Expression>,
         consequence: Box<Expression>,
     },
-    Function {
-        name: String,
-        parameter: Vec<(String, Token)>,
-        body: Box<Expression>,
-    },
     Call {
         name: String,
         arguments: Vec<Box<Expression>>,

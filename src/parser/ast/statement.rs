@@ -1,3 +1,4 @@
+use crate::lexer::token::Token;
 use crate::parser::ast::expression::Expression;
 
 #[derive(Eq, PartialEq)]
@@ -12,5 +13,10 @@ pub enum Statement {
     },
     Expression {
         value: Box<Expression>,
+    },
+    Function {
+        name: String,
+        parameter: Vec<(String, Token)>,
+        body: Box<Expression>,
     },
 }
