@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 use crate::lexer::token::Token;
+use crate::parser::ast::statement::Statement;
 
 pub mod ast;
 
@@ -15,5 +16,7 @@ impl Parser {
         }
     }
 
-    
+    pub fn parse_statement(&mut self) -> anyhow::Result<Statement> {
+        todo!()
+    }
 }

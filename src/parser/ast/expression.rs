@@ -1,5 +1,7 @@
 use crate::lexer::token::Token;
 
+#[derive(Eq, PartialEq)]
+#[derive(Debug)]
 pub enum Expression {
     Identifier {
         name: String,

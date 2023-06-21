@@ -21,6 +21,7 @@ pub fn keyword_map() -> HashMap<String, Token> {
         ("bool".to_string(), Token::BooleanType),
         ("if".to_string(), Token::If),
         ("while".to_string(), Token::While),
+        ("ret".to_string(), Token::Return),
     ])
 }
 

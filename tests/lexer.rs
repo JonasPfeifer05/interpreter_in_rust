@@ -2,13 +2,13 @@ use interpreter::lexer::{keyword_map, Lexer};
 use interpreter::lexer::token::Token;
 
 const LEXER_TEST_PATH: &'static str = "res/tests/lexer.txt";
-const LEXER_TEST_STRING: &'static str = "abc 123 123.3 \"askdlk\" true false ; : , . ( ) { } [ ] = + - * / % ! && || == != > < >= <= function let if while int float string bool";
+const LEXER_TEST_STRING: &'static str = "abc 123 123.3 \"askdlk\" true false ; : , . ( ) { } [ ] = + - * / % ! && || == != > < >= <= function let if while int float string bool ret";
 
 #[test]
 fn test_keywords() {
     let keywords = keyword_map();
 
-    assert_eq!(keywords.len(), 10, "Keywords length do not match with the actual amount of keywords!")
+    assert_eq!(keywords.len(), 11, "Keywords length do not match with the actual amount of keywords!")
 }
 
 #[test]
@@ -71,6 +71,7 @@ fn test_lexer_lex() {
         Token::FloatType,
         Token::StringType,
         Token::BooleanType,
+        Token::Return,
     ];
 
     let mut lexer = Lexer::from_path(LEXER_TEST_PATH).unwrap();

@@ -56,4 +56,6 @@ pub enum Token {
     FloatType,
     StringType,
     BooleanType,
+
+    Return,
 }

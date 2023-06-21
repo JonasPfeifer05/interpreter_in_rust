@@ -1,5 +1,7 @@
 use crate::parser::ast::expression::Expression;
 
+#[derive(Eq, PartialEq)]
+#[derive(Debug)]
 pub enum Statement {
     Let {
         name: String,
