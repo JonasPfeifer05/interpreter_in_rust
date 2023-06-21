@@ -1,4 +1,8 @@
+/// A token represents a single part of a statement inside the programming language
 pub enum Token {
+    // Represents an unknown part inside a program
+    Illegal,
+
     // Types
     Identifier(String),
     Integer(String),
@@ -6,7 +10,7 @@ pub enum Token {
     String(String),
     Boolean(String),
 
-    // Special Characters
+    // Special characters
     Semicolon,
     Colon,
     Comma,
@@ -42,8 +46,11 @@ pub enum Token {
     Function,
     Let,
 
+    If,
+    While,
+
     IntegerType,
     FloatType,
     StringType,
-    BoolType,
+    BooleanType,
 }
