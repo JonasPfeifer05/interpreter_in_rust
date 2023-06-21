@@ -4,9 +4,10 @@ use std::collections::HashMap;
 use std::fs;
 use std::iter::Peekable;
 use std::path::Path;
-use std::str::Chars;
 use std::vec::IntoIter;
 use crate::lexer::token::Token;
+
+const SKIPPABLES: [char; 4] = ['\n', '\r', '\t', ' '];
 
 pub fn keyword_map() -> HashMap<String, Token> {
     HashMap::from([
@@ -51,6 +52,7 @@ impl Lexer {
         let mut tokens: Vec<Token> = vec![];
 
         while let Some(char) = self.program.next() {
+            if SKIPPABLES.contains(&char) { continue }
             let token = match char {
                 // Types
                 c if c.is_ascii_alphabetic() => self.parse_identifier(c),
@@ -106,7 +108,6 @@ impl Lexer {
                 _ => Token::Illegal,
             };
             tokens.push(token);
-            self.program.next();
         }
 
         tokens
@@ -116,7 +117,7 @@ impl Lexer {
         let mut identifier = String::from(c);
 
         while let Some(c) = self.program.peek() {
-            if !c.is_alphabetic() { break }
+            if !c.is_ascii_alphabetic() { break }
             identifier.push(*c);
             self.program.next();
         }
@@ -132,7 +133,7 @@ impl Lexer {
         let mut number = String::from(c);
 
         while let Some(c) = self.program.peek() {
-            if !(c.is_numeric() || c == &'.') { break }
+            if !(c.is_digit(10) || c == &'.') { break }
             number.push(*c);
             self.program.next();
         }
