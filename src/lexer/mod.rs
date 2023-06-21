@@ -23,10 +23,10 @@ pub fn keyword_map() -> HashMap<String, Token> {
 /// Parses a Program into the individual Token
 pub struct Lexer {
     // String representation of the program
-    program: String,
+    pub program: String,
 
     // Stores all the keywords
-    keywords: HashMap<String, Token>,
+    pub keywords: HashMap<String, Token>,
 }
 
 impl Lexer {

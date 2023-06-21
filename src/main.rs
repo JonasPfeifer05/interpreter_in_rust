@@ -1,7 +1,7 @@
-mod lexer;
-mod parser;
-mod evaluator;
-mod error;
+pub mod lexer;
+pub mod parser;
+pub mod evaluator;
+pub mod error;
 
 fn main() {
     println!("Hello, world!");
