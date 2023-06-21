@@ -9,3 +9,6 @@ edition = "2021"
 # Error handling
 thiserror   = "1.*"
 anyhow      = "1.*"
+
+# Fancy stuff
+colored = "2.*"
