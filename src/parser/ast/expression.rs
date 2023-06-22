@@ -121,170 +121,7 @@ impl Expression {
                 Ok((object, false))
             }
             Expression::Infix { left, operation, right } => {
-                match operation {
-                    Token::Add => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Integer(left + right), false)),
-                            Object::Float(right) => Ok((Object::Float(left as f64 + right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Add))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Float(left + right as f64), false)),
-                            Object::Float(right) => Ok((Object::Float(left + right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Add))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Add, left.clone()))
-                    }
-                    Token::Subtract => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Integer(left - right), false)),
-                            Object::Float(right) => Ok((Object::Float(left as f64 - right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Subtract))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Float(left - right as f64), false)),
-                            Object::Float(right) => Ok((Object::Float(left - right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Subtract))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Subtract, left.clone()))
-                    }
-                    Token::Multiply => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Integer(left * right), false)),
-                            Object::Float(right) => Ok((Object::Float(left as f64 * right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Multiply))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Float(left * right as f64), false)),
-                            Object::Float(right) => Ok((Object::Float(left * right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Multiply))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Multiply, left.clone()))
-                    }
-                    Token::Divide => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Integer(left / right), false)),
-                            Object::Float(right) => Ok((Object::Float(left as f64 / right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Divide))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Float(left / right as f64), false)),
-                            Object::Float(right) => Ok((Object::Float(left / right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Divide))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Divide, left.clone()))
-                    }
-                    Token::Modular => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Integer(left % right), false)),
-                            Object::Float(right) => Ok((Object::Float(left as f64 % right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Modular))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Float(left % right as f64), false)),
-                            Object::Float(right) => Ok((Object::Float(left % right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Modular))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Modular, left.clone()))
-                    }
-                    Token::And => match left.evaluate(environment)?.0 {
-                        Object::Boolean(left) => match right.evaluate(environment)?.0 {
-                            Object::Boolean(right) => Ok((Object::Boolean(left && right), false)),
-                            obj => bail!(IncompatibleTypes(Token::BooleanType, obj, Token::And))
-                        }
-                        _ => bail!(CannotApplyOn(Token::And, left.clone()))
-                    }
-                    Token::Or => match left.evaluate(environment)?.0 {
-                        Object::Boolean(left) => match right.evaluate(environment)?.0 {
-                            Object::Boolean(right) => Ok((Object::Boolean(left || right), false)),
-                            obj => bail!(IncompatibleTypes(Token::BooleanType, obj, Token::Or))
-                        }
-                        _ => bail!(CannotApplyOn(Token::And, left.clone()))
-                    }
-                    Token::Equal => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left == right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Equal))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Float(right) => Ok((Object::Boolean(left == right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Equal))
-                        }
-                        Object::Boolean(left) => match right.evaluate(environment)?.0 {
-                            Object::Boolean(right) => Ok((Object::Boolean(left == right), false)),
-                            obj => bail!(IncompatibleTypes(Token::BooleanType, obj, Token::Equal))
-                        }
-                        _ => bail!(CannotApplyOn(Token::And, left.clone()))
-                    }
-                    Token::NotEqual => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left != right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::Equal))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Float(right) => Ok((Object::Boolean(left != right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::Equal))
-                        }
-                        Object::Boolean(left) => match right.evaluate(environment)?.0 {
-                            Object::Boolean(right) => Ok((Object::Boolean(left != right), false)),
-                            obj => bail!(IncompatibleTypes(Token::BooleanType, obj, Token::Equal))
-                        }
-                        _ => bail!(CannotApplyOn(Token::NotEqual, left.clone()))
-                    }
-                    Token::GreaterThan => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left > right), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left as f64 > right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::GreaterThan))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left > right as f64), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left > right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::GreaterThan))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Modular, left.clone()))
-                    }
-                    Token::LessThan => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left < right), false)),
-                            Object::Float(right) => Ok((Object::Boolean((left as f64) < right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::LessThan))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left < right as f64), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left < right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::LessThan))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Modular, left.clone()))
-                    }
-                    Token::GreaterThanEqual => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left >= right), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left as f64 >= right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::GreaterThanEqual))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left >= right as f64), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left >= right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::GreaterThanEqual))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Modular, left.clone()))
-                    }
-                    Token::LessThanEqual => match left.evaluate(environment)?.0 {
-                        Object::Integer(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left <= right), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left as f64 <= right), false)),
-                            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, Token::LessThanEqual))
-                        }
-                        Object::Float(left) => match right.evaluate(environment)?.0 {
-                            Object::Integer(right) => Ok((Object::Boolean(left <= right as f64), false)),
-                            Object::Float(right) => Ok((Object::Boolean(left <= right), false)),
-                            obj => bail!(IncompatibleTypes(Token::FloatType, obj, Token::LessThanEqual))
-                        }
-                        _ => bail!(CannotApplyOn(Token::Modular, left.clone()))
-                    }
-                    _ => unreachable!(),
-                }
+                Ok((evaluate_infix_expression(left, left.evaluate(environment)?.0, right.evaluate(environment)?.0, operation)?, false))
             }
             Expression::If { condition, consequence, alternative } => { todo!() }
             Expression::While { condition, consequence } => { todo!() }
@@ -295,5 +132,145 @@ impl Expression {
             Expression::Block { statements } => { todo!() }
             Expression::Access { source, index } => { todo!() }
         }
+    }
+}
+
+pub fn evaluate_infix_expression(
+    left: &Box<Expression>,
+    left_obj: Object,
+    right_obj: Object,
+    operation: &Token,
+) -> anyhow::Result<Object> {
+    let (
+        integer_op,
+        float_op,
+        string_op,
+        bool_op,
+        int_float_mixable,
+    ) = get_apply_functions(operation);
+
+    Ok(match left_obj {
+        Object::Integer(left_val) if integer_op.is_some() => match right_obj {
+            Object::Integer(right_val) => integer_op.unwrap()(left_val, right_val),
+            Object::Float(right_val) if int_float_mixable => float_op.unwrap()(left_val as f64, right_val),
+            obj => bail!(IncompatibleTypes(Token::IntegerType, obj, operation.clone()))
+        }
+        Object::Float(left_val) if float_op.is_some() => match right_obj {
+            Object::Integer(right_val) => float_op.unwrap()(left_val, right_val as f64),
+            Object::Float(right_val) if int_float_mixable => float_op.unwrap()(left_val, right_val),
+            obj => bail!(IncompatibleTypes(Token::FloatType, obj, operation.clone()))
+        }
+        Object::String(left_val) if string_op.is_some() => match right_obj {
+            Object::String(right_val) => string_op.unwrap()(left_val, right_val),
+            obj => bail!(IncompatibleTypes(Token::StringType, obj, operation.clone()))
+        }
+        Object::Boolean(left_val) if bool_op.is_some() => match right_obj {
+            Object::Boolean(right_val) => bool_op.unwrap()(left_val,right_val),
+            obj => bail!(IncompatibleTypes(Token::BooleanType, obj, operation.clone()))
+        }
+        _ => bail!(CannotApplyOn(operation.clone(), left.clone()))
+    })
+}
+
+pub fn get_apply_functions(operator: &Token) -> (
+    Option<fn(i128, i128) -> Object>,
+    Option<fn(f64, f64) -> Object>,
+    Option<fn(String, String) -> Object>,
+    Option<fn(bool, bool) -> Object>,
+    bool,
+) {
+    match operator {
+        Token::Add => (
+            Some(|a: i128, b: i128| Object::Integer(a + b)),
+            Some(|a: f64, b: f64| Object::Float(a + b)),
+            Some(|a: String, b: String| Object::String(format!("{}{}", a, b))),
+            None,
+            true,
+        ),
+        Token::Subtract => (
+            Some(|a: i128, b: i128| Object::Integer(a - b)),
+            Some(|a: f64, b: f64| Object::Float(a - b)),
+            None,
+            None,
+            true,
+        ),
+        Token::Multiply => (
+            Some(|a: i128, b: i128| Object::Integer(a * b)),
+            Some(|a: f64, b: f64| Object::Float(a * b)),
+            None,
+            None,
+            true,
+        ),
+        Token::Divide => (
+            Some(|a: i128, b: i128| Object::Integer(a / b)),
+            Some(|a: f64, b: f64| Object::Float(a / b)),
+            None,
+            None,
+            true,
+        ),
+        Token::Modular => (
+            Some(|a: i128, b: i128| Object::Integer(a % b)),
+            Some(|a: f64, b: f64| Object::Float(a % b)),
+            None,
+            None,
+            true,
+        ),
+        Token::And => (
+            None,
+            None,
+            None,
+            Some(|a: bool,b: bool| Object::Boolean(a && b)),
+            false,
+        ),
+        Token::Or => (
+            None,
+            None,
+            None,
+            Some(|a: bool,b: bool| Object::Boolean(a || b)),
+            false
+        ),
+        Token::Equal => (
+            Some(|a: i128,b: i128| Object::Boolean(a == b)),
+            Some(|a: f64,b: f64| Object::Boolean(a == b)),
+            Some(|a: String,b: String| Object::Boolean(a == b)),
+            Some(|a: bool,b: bool| Object::Boolean(a == b)),
+            false,
+        ),
+        Token::NotEqual => (
+            Some(|a: i128,b: i128| Object::Boolean(a != b)),
+            Some(|a: f64,b: f64| Object::Boolean(a != b)),
+            Some(|a: String,b: String| Object::Boolean(a != b)),
+            Some(|a: bool,b: bool| Object::Boolean(a != b)),
+            false,
+        ),
+        Token::GreaterThan => (
+            Some(|a: i128,b: i128| Object::Boolean(a > b)),
+            Some(|a: f64,b: f64| Object::Boolean(a > b)),
+            None,
+            None,
+            true,
+        ),
+        Token::LessThan => (
+            Some(|a: i128,b: i128| Object::Boolean(a < b)),
+            Some(|a: f64,b: f64| Object::Boolean(a < b)),
+            None,
+            None,
+            true,
+        ),
+        Token::GreaterThanEqual => (
+            Some(|a: i128,b: i128| Object::Boolean(a >= b)),
+            Some(|a: f64,b: f64| Object::Boolean(a >= b)),
+            None,
+            None,
+            true,
+        ),
+        Token::LessThanEqual => (
+            Some(|a: i128,b: i128| Object::Boolean(a <= b)),
+            Some(|a: f64,b: f64| Object::Boolean(a <= b)),
+            None,
+            None,
+            true,
+        ),
+        _ => unreachable!(),
     }
 }
