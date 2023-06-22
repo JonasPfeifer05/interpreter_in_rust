@@ -18,6 +18,7 @@ pub enum Statement {
     Function {
         name: String,
         parameter: Vec<(String, Token)>,
+        typee: Token,
         body: Box<Expression>,
     },
 }

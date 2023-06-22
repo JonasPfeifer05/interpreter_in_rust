@@ -142,11 +142,24 @@ impl Parser {
 
         self.assert_next_token(Token::RParent)?;
 
+        self.assert_next_token(Token::Colon)?;
+        let typee = self.tokens.next().ok_or(RanOutOfTokens).unwrap();
+
+        match typee {
+            Token::IntegerType => {}
+            Token::FloatType => {}
+            Token::StringType => {}
+            Token::BooleanType => {}
+            token => bail!(ExpectedButFound("Type".to_string(), token))
+        };
+
+
         let body = Box::new(self.parse_block_expression()?);
 
         Ok(Statement::Function {
             name,
             parameter,
+            typee,
             body,
         })
     }
@@ -199,6 +212,7 @@ impl Parser {
                 Token::And => self.parse_infix_expression(left_expr, Token::And),
                 Token::LParent => self.parse_call_expression(left_expr),
                 Token::Assign => self.parse_assign_expression(left_expr),
+                Token::LBracket => self.parse_access_expression(left_expr),
                 _ => { return Ok(left_expr); }
             }?;
 
@@ -218,6 +232,7 @@ impl Parser {
 
     pub fn parse_array_expression(&mut self) -> anyhow::Result<Expression> {
         if let Some(&Token::RBracket) = self.tokens.peek() {
+            self.tokens.next();
             return Ok(Expression::Array {
                 values: vec![],
             });
@@ -364,6 +379,17 @@ impl Parser {
 
         Ok(Expression::Error {
             value
+        })
+    }
+
+    pub fn parse_access_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
+        let index = Box::new(self.parse_expression(Precedences::Lowest)?);
+
+        self.assert_next_token(Token::RBracket)?;
+
+        Ok(Expression::Access {
+            source: Box::new(left),
+            index
         })
     }
 

@@ -54,4 +54,8 @@ pub enum Expression {
     Block {
         statements: Vec<Box<Statement>>
     },
+    Access {
+        source: Box<Expression>,
+        index: Box<Expression>,
+    }
 }

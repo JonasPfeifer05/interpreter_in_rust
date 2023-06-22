@@ -11,6 +11,7 @@ pub enum Precedences {
     Sum,
     Product,
     Prefix,
+    Postfix,
     Call,
     Assign,
 }
@@ -40,6 +41,8 @@ impl Token {
             Token::LParent => Precedences::Call,
 
             Token::Assign => Precedences::Assign,
+
+            Token::LBracket => Precedences::Postfix,
 
             _ => Precedences::Lowest
         }

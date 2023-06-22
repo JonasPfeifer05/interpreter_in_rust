@@ -361,6 +361,8 @@ pub fn test_function_statement() {
         Token::Colon,
         Token::IntegerType,
         Token::RParent,
+        Token::Colon,
+        Token::IntegerType,
         Token::LBrace,
         Token::Integer("1".to_string()),
         Token::Semicolon,
@@ -374,6 +376,7 @@ pub fn test_function_statement() {
         Statement::Function {
             name: "test".to_string(),
             parameter: vec![("a".to_string(), Token::IntegerType)],
+            typee: Token::IntegerType,
             body: Box::new(Expression::Block {
                 statements: vec![Box::new(Statement::Expression {
                     value: Box::new(Expression::Integer {
