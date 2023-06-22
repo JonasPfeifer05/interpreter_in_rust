@@ -58,6 +58,7 @@ pub enum Token {
     StringType,
     BooleanType,
     NullType,
+    ArrayType,
 
     Return,
 

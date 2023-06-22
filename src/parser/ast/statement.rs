@@ -42,6 +42,7 @@ impl Statement {
                     Object::Float(_) => if !typee.equal_variant(&Token::FloatType) { bail!(InvalidType(typee.clone(), Token::FloatType)) }
                     Object::String(_) => if !typee.equal_variant(&Token::StringType) { bail!(InvalidType(typee.clone(), Token::StringType)) }
                     Object::Boolean(_) => if !typee.equal_variant(&Token::BooleanType) { bail!(InvalidType(typee.clone(), Token::BooleanType)) }
+                    Object::Array(_) => if !typee.equal_variant(&Token::ArrayType) { bail!(InvalidType(typee.clone(), Token::BooleanType)) }
                     Object::Error(_) => {}
                     obj => bail!(InvalidTypeButFound(typee.clone(), obj)),
                 }

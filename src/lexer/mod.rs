@@ -25,6 +25,7 @@ pub fn keyword_map() -> HashMap<String, Token> {
         ("ret".to_string(), Token::Return),
         ("err".to_string(), Token::Error),
         ("null".to_string(), Token::NullType),
+        ("array".to_string(), Token::ArrayType),
     ])
 }
 

@@ -52,13 +52,7 @@ impl Parser {
 
         let typee = self.tokens.next().ok_or(RanOutOfTokens).unwrap();
 
-        match typee {
-            Token::IntegerType => {}
-            Token::FloatType => {}
-            Token::StringType => {}
-            Token::BooleanType => {}
-            token => bail!(ExpectedButFound("Type".to_string(), token))
-        };
+        Self::assert_type(&typee)?;
 
         self.assert_next_token(Token::Assign)?;
 
@@ -105,13 +99,7 @@ impl Parser {
             };
             self.assert_next_token(Token::Colon)?;
             let typee = self.tokens.next().ok_or(RanOutOfTokens)?;
-            match typee {
-                Token::IntegerType |
-                Token::FloatType |
-                Token::StringType |
-                Token::BooleanType => {}
-                token => bail!(ExpectedButFound("Type".to_string(), token))
-            }
+            Self::assert_type(&typee)?;
             parameter.push((name, typee));
 
             while let Some(token) = self.tokens.peek() {
@@ -128,13 +116,7 @@ impl Parser {
 
                 let typee = self.tokens.next().ok_or(RanOutOfTokens)?;
 
-                match typee {
-                    Token::IntegerType |
-                    Token::FloatType |
-                    Token::StringType |
-                    Token::BooleanType => {}
-                    token => bail!(ExpectedButFound("Type".to_string(), token))
-                }
+                Self::assert_type(&typee)?;
 
                 parameter.push((name, typee));
             }
@@ -145,15 +127,7 @@ impl Parser {
         self.assert_next_token(Token::Colon)?;
         let typee = self.tokens.next().ok_or(RanOutOfTokens).unwrap();
 
-        match typee {
-            Token::IntegerType => {}
-            Token::FloatType => {}
-            Token::StringType => {}
-            Token::BooleanType => {}
-            Token::NullType => {}
-            token => bail!(ExpectedButFound("Type".to_string(), token))
-        };
-
+        Self::assert_type(&typee)?;
 
         let body = Box::new(self.parse_block_expression()?);
 
@@ -400,6 +374,19 @@ impl Parser {
         if let Some(cur) = self.tokens.next() {
             if cur != token { bail!(ExpectedTokenButFound(token, cur)) }
         } else { bail!(RanOutOfTokens) }
+        Ok(())
+    }
+
+    pub fn assert_type(typee: &Token) -> anyhow::Result<()> {
+        match typee {
+            Token::IntegerType |
+            Token::FloatType |
+            Token::StringType |
+            Token::BooleanType |
+            Token::NullType |
+            Token::ArrayType => {}
+            token => bail!(ExpectedButFound("Type".to_string(), token.clone()))
+        }
         Ok(())
     }
 }
