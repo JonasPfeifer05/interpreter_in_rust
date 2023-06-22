@@ -45,11 +45,11 @@ pub struct Scope {
 
 impl Scope {
     pub fn get(&self, identifier: &str) -> Option<&Object> {
-        self.get(identifier)
+        self.identifiers.get(identifier)
     }
 
     pub fn get_mut(&mut self, identifier: &str) -> Option<&mut Object> {
-        self.get_mut(identifier)
+        self.identifiers.get_mut(identifier)
     }
 
     pub fn set(&mut self, identifier: String, value: Object) {

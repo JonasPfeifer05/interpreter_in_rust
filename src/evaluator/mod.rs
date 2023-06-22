@@ -20,7 +20,7 @@ impl Evaluator {
 impl Evaluator {
     pub fn evaluate(&mut self, environment: &mut Environment) -> anyhow::Result<()> {
         while let Some(statement) = self.statements.next() {
-            statement.evaluate(environment)?;
+            println!("{:?}", statement.evaluate(environment)?);
         }
         Ok(())
     }

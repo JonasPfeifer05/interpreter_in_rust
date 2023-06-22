@@ -23,4 +23,14 @@ pub enum EvalError {
     InvalidType(Token, Token),
     #[error("Expected {0:?} but found {1:?}!")]
     InvalidTypeButFound(Token, Object),
+    #[error("Found unknown identifier {0}!")]
+    UnknownIdentifier(String),
+    #[error("Could not convert {0} into {1}!")]
+    CannotConvertInto(String, String),
+    #[error("Cannot apply {0:?} on {1:#?}!")]
+    IllegalPrefixOperation(Token, Box<Expression>),
+    #[error("Cannot perform operation {0:?} on {1:?}!")]
+    CannotApplyOn(Token, Box<Expression>),
+    #[error("Cannot apply oepration {2:?} between {0:?} and {1:?}!")]
+    IncompatibleTypes(Token, Object, Token)
 }
