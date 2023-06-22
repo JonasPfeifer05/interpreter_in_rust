@@ -6,6 +6,8 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 
 use clap::Parser as ClapParser;
+use crate::evaluator::environment::Environment;
+use crate::evaluator::Evaluator;
 
 #[derive(ClapParser, Debug)]
 struct Arguments {
@@ -13,7 +15,7 @@ struct Arguments {
     path: Option<String>
 }
 
-pub fn run_program(program: String) {
+pub fn run_program(program: String, environment: &mut Environment) {
     let start = Instant::now();
     let mut lexer = Lexer::from_string(program);
     let tokens = lexer.lex();
@@ -26,6 +28,16 @@ pub fn run_program(program: String) {
     if let Ok(ast) = ast {
         println!("{}", format!("{:#?}", ast).bright_blue());
         println!("{}", format!("Parsing took {:?}", start.elapsed()).magenta());
+
+        let mut evaluator = Evaluator::new(ast.into_iter());
+        let result = evaluator.evaluate(environment);
+        if let Err(err) = result {
+            eprintln!("{}", format!("{}", err).bright_red());
+            println!("{}", format!("Evaluating took {:?}", start.elapsed()).magenta());
+        } else {
+            println!("{}", format!("Evaluation succeeded!").bright_blue());
+            println!("{}", format!("Parsing took {:?}", start.elapsed()).magenta());
+        }
     } else if let Err(err) = ast {
         eprintln!("{}", format!("{}", err).bright_red());
         println!("{}", format!("Parsing took {:?}", start.elapsed()).magenta());
@@ -38,14 +50,16 @@ pub fn run_repl() {
 
     let args = Arguments::parse();
 
+    let mut environment = Environment::default();
+
     if args.path.is_some() {
-        run_program(fs::read_to_string(args.path.unwrap()).unwrap())
+        run_program(fs::read_to_string(args.path.unwrap()).unwrap(), &mut environment)
     }
 
     loop {
         let program = read_from_stdin(">> ");
         if &program == &"exit" { break }
-        run_program(program);
+        run_program(program, &mut environment);
     }
 }
 

@@ -1,8 +1,10 @@
+use crate::evaluator::environment::Environment;
+use crate::evaluator::object::Object;
 use crate::lexer::token::Token;
 use crate::parser::ast::statement::Statement;
 
 #[derive(Eq, PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Identifier {
         name: String,
@@ -57,5 +59,28 @@ pub enum Expression {
     Access {
         source: Box<Expression>,
         index: Box<Expression>,
+    }
+}
+
+impl Expression {
+    pub fn evaluate(&self, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
+        match self {
+            Expression::Identifier { .. } => {}
+            Expression::Integer { .. } => {}
+            Expression::Float { .. } => {}
+            Expression::String { .. } => {}
+            Expression::Boolean { .. } => {}
+            Expression::Prefix { .. } => {}
+            Expression::Infix { .. } => {}
+            Expression::If { .. } => {}
+            Expression::While { .. } => {}
+            Expression::Call { .. } => {}
+            Expression::Error { .. } => {}
+            Expression::Assign { .. } => {}
+            Expression::Array { .. } => {}
+            Expression::Block { .. } => {}
+            Expression::Access { .. } => {}
+        }
+        todo!()
     }
 }
