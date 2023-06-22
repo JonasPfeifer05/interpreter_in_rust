@@ -6,6 +6,7 @@ use crate::parser::ast::expression::Expression;
 pub enum Statement {
     Let {
         name: String,
+        typee: Token,
         value: Box<Expression>,
     },
     Return {

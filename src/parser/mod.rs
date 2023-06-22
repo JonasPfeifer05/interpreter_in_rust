@@ -48,6 +48,18 @@ impl Parser {
             token => bail!(ExpectedButFound("Identifier".to_string(), token)),
         };
 
+        self.assert_next_token(Token::Colon)?;
+
+        let typee = self.tokens.next().ok_or(RanOutOfTokens).unwrap();
+
+        match typee {
+            Token::IntegerType => {}
+            Token::FloatType => {}
+            Token::StringType => {}
+            Token::BooleanType => {}
+            token => bail!(ExpectedButFound("Type".to_string(), token))
+        };
+
         self.assert_next_token(Token::Assign)?;
 
         let value = Box::new(self.parse_expression(Precedences::Lowest)?);
@@ -56,6 +68,7 @@ impl Parser {
 
         Ok(Statement::Let {
             name,
+            typee,
             value,
         })
     }
@@ -84,7 +97,6 @@ impl Parser {
 
         let mut parameter = vec![];
 
-        let mut arguments = vec![];
         if let Some(&Token::RParent) = self.tokens.peek() {}
         else {
             let name = match self.tokens.next().ok_or(RanOutOfTokens)? {
@@ -100,9 +112,10 @@ impl Parser {
                 Token::BooleanType => {}
                 token => bail!(ExpectedButFound("Type".to_string(), token))
             }
-            arguments.push((name, typee));
+            parameter.push((name, typee));
 
             while let Some(token) = self.tokens.peek() {
+                println!("{:?}", token);
                 if token.equal_variant(&Token::RParent) { break }
 
                 self.assert_next_token(Token::Comma)?;

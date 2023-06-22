@@ -275,6 +275,8 @@ pub fn test_let_statement() {
     let tokens = vec![
         Token::Let,
         Token::Identifier("a".to_string()),
+        Token::Colon,
+        Token::IntegerType,
         Token::Assign,
         Token::Integer("10".to_string()),
         Token::Semicolon,
@@ -286,6 +288,7 @@ pub fn test_let_statement() {
         parser.parse_statement().unwrap(),
         Statement::Let {
             name: "a".to_string(),
+            typee: Token::IntegerType,
             value: Box::new(Expression::Integer {
                 value: "10".to_string()
             }),
