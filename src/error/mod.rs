@@ -32,5 +32,19 @@ pub enum EvalError {
     #[error("Cannot perform operation {0:?} on {1:?}!")]
     CannotApplyOn(Token, Box<Expression>),
     #[error("Cannot apply oepration {2:?} between {0:?} and {1:?}!")]
-    IncompatibleTypes(Token, Object, Token)
+    IncompatibleTypes(Token, Object, Token),
+    #[error("Cannot assignt object with type {0:?} to variable {2} with type {1:?}!")]
+    CannotAssignDifferentType(Object, Object, String),
+    #[error("Cannot access: {0:?}")]
+    CannotArrayAccess(Box<Expression>),
+    #[error("Cannot access array with: {0:?}")]
+    CannotAccessArrayWith(Box<Expression>),
+    #[error("Index {0} is out of range!")]
+    IndexOutOfRange(i128),
+    #[error("You cannot call {0:?}!")]
+    CannotCall(Object),
+    #[error("Passed invalid amount of arguments! Expected {0} found {1}!")]
+    InvalidAmountOfArguments(usize,usize),
+    #[error("Expected type {0:?} but found {1:?}!")]
+    ExpectedTypeButFound(Token, Object)
 }

@@ -39,9 +39,9 @@ impl Statement {
                 let (value, _) = value.evaluate(environment)?;
                 match value {
                     Object::Integer(_) => if !typee.equal_variant(&Token::IntegerType) { bail!(InvalidType(typee.clone(), Token::IntegerType)) }
-                    Object::Float(_) => if !typee.equal_variant(&Token::IntegerType) { bail!(InvalidType(typee.clone(), Token::FloatType)) }
-                    Object::String(_) => if !typee.equal_variant(&Token::IntegerType) { bail!(InvalidType(typee.clone(), Token::StringType)) }
-                    Object::Boolean(_) => if !typee.equal_variant(&Token::IntegerType) { bail!(InvalidType(typee.clone(), Token::BooleanType)) }
+                    Object::Float(_) => if !typee.equal_variant(&Token::FloatType) { bail!(InvalidType(typee.clone(), Token::FloatType)) }
+                    Object::String(_) => if !typee.equal_variant(&Token::StringType) { bail!(InvalidType(typee.clone(), Token::StringType)) }
+                    Object::Boolean(_) => if !typee.equal_variant(&Token::BooleanType) { bail!(InvalidType(typee.clone(), Token::BooleanType)) }
                     Object::Error(_) => {}
                     obj => bail!(InvalidTypeButFound(typee.clone(), obj)),
                 }

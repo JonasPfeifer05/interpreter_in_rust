@@ -26,7 +26,7 @@ impl Evaluator {
     }
 }
 
-pub fn evaluate_block(statements: &Vec<Statement>, remove_ret: bool, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
+pub fn evaluate_block(statements: &Vec<Box<Statement>>, remove_ret: bool, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
     let mut result = (Object::Null, false);
     for statement in statements {
         result = statement.evaluate(environment)?;

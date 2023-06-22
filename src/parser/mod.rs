@@ -150,6 +150,7 @@ impl Parser {
             Token::FloatType => {}
             Token::StringType => {}
             Token::BooleanType => {}
+            Token::NullType => {}
             token => bail!(ExpectedButFound("Type".to_string(), token))
         };
 
@@ -319,6 +320,8 @@ impl Parser {
         self.assert_next_token(Token::RParent)?;
 
         let consequence = Box::new(self.parse_block_expression()?);
+
+        println!("{:?}", self.tokens.peek());
 
         if let Some(&Token::Else) = self.tokens.peek() {
             self.assert_next_token(Token::Else)?;

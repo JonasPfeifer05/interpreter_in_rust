@@ -20,6 +20,7 @@ pub fn keyword_map() -> HashMap<String, Token> {
         ("string".to_string(), Token::StringType),
         ("bool".to_string(), Token::BooleanType),
         ("if".to_string(), Token::If),
+        ("else".to_string(), Token::Else),
         ("while".to_string(), Token::While),
         ("ret".to_string(), Token::Return),
         ("err".to_string(), Token::Error),

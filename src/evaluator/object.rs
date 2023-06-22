@@ -16,3 +16,9 @@ pub enum Object {
         body: Box<Expression>,
     }
 }
+
+impl Object {
+    pub fn equal_variant(&self, other: &Object) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+    }
+}
