@@ -115,7 +115,6 @@ impl Parser {
             parameter.push((name, typee));
 
             while let Some(token) = self.tokens.peek() {
-                println!("{:?}", token);
                 if token.equal_variant(&Token::RParent) { break }
 
                 self.assert_next_token(Token::Comma)?;
