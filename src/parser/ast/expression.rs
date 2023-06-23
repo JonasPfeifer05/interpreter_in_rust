@@ -1,10 +1,10 @@
 use std::ops::Deref;
 use anyhow::bail;
 use clap::arg;
-use crate::error::EvalError::{CannotAccessArrayWith, CannotApplyOn, CannotArrayAccess, CannotAssignDifferentType, CannotCall, CannotConvertInto, ExpectedTypeButFound, IllegalPrefixOperation, IncompatibleTypes, IndexOutOfRange, InvalidAmountOfArguments, InvalidTypeButFound, UnknownIdentifier};
+use crate::error::EvalError::{CannotAccessArrayWith, CannotApplyOn, CannotArrayAccess, CannotAssignDifferentType, CannotAssignTo, CannotCall, CannotConvertInto, ExpectedTypeButFound, IllegalPrefixOperation, IncompatibleTypes, IndexOutOfRange, InvalidAmountOfArguments, InvalidTypeButFound, UnknownIdentifier};
 use crate::evaluator::environment::Environment;
 use crate::evaluator::evaluate_block;
-use crate::evaluator::object::Object;
+use crate::evaluator::object::{Object, OwnerShip};
 use crate::lexer::token::Token;
 use crate::parser::ast::statement::Statement;
 
@@ -52,7 +52,7 @@ pub enum Expression {
         value: Box<Expression>
     },
     Assign {
-        name: String,
+        assign_to: Box<Expression>,
         value: Box<Expression>,
     },
     Array {
@@ -68,53 +68,60 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn evaluate(&self, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
+    pub fn evaluate(&self, environment: &mut Environment) -> anyhow::Result<(OwnerShip, bool)> {
         match self {
             Expression::Identifier { name } => {
-                if let Some(value) = environment.search(name) {
-                    Ok((value.clone(), false))
+                if let Some(value) = environment.get(name) {
+                    Ok((OwnerShip::Reference(name.clone()), false))
                 } else {
                     bail!(UnknownIdentifier(name.to_string()))
                 }
             }
             Expression::Integer { value } => {
                 if let Ok(value) = value.parse::<i128>() {
-                    Ok((Object::Integer(value), false))
+                    Ok((OwnerShip::Instance(Object::Integer(value)), false))
                 } else {
                     bail!(CannotConvertInto(value.clone(), "Integer".to_string()))
                 }
             }
             Expression::Float { value } => {
                 if let Ok(value) = value.parse::<f64>() {
-                    Ok((Object::Float(value), false))
+                    Ok((OwnerShip::Instance(Object::Float(value)), false))
                 } else {
                     bail!(CannotConvertInto(value.clone(), "Float".to_string()))
                 }
             }
             Expression::String { value } => {
-                Ok((Object::String(value.clone()), false))
+                Ok((OwnerShip::Instance(Object::String(value.clone())), false))
             }
             Expression::Boolean { value } => {
                 if value == "true" {
-                    Ok((Object::Boolean(true), false))
+                    Ok((OwnerShip::Instance(Object::Boolean(true)), false))
                 } else {
-                    Ok((Object::Boolean(false), false))
+                    Ok((OwnerShip::Instance(Object::Boolean(false)), false))
                 }
             }
             Expression::Prefix { prefix, value } => {
-                let (object, _) = value.evaluate(environment)?;
+                let (object_ownership, _) = value.evaluate(environment)?;
+                let object = object_ownership.value(environment)?;
 
                 let object = match prefix {
                     Token::Subtract => {
                         match object {
-                            Object::Integer(val) => Object::Integer(-val),
-                            Object::Float(val) => Object::Float(-val),
+                            Object::Integer(val) => OwnerShip::Instance(Object::Integer(-val)),
+                            Object::Float(val) => OwnerShip::Instance(Object::Float(-val)),
                             _ => bail!(IllegalPrefixOperation(Token::Subtract, value.clone()))
                         }
                     }
                     Token::Invert => {
                         match object {
-                            Object::Boolean(val) => Object::Boolean(!val),
+                            Object::Boolean(val) => OwnerShip::Instance(Object::Boolean(!val)),
+                            _ => bail!(IllegalPrefixOperation(Token::Invert, value.clone())),
+                        }
+                    }
+                    Token::SingleAnd => {
+                        match object_ownership {
+                            OwnerShip::Reference(_) => object_ownership,
                             _ => bail!(IllegalPrefixOperation(Token::Invert, value.clone())),
                         }
                     }
@@ -124,44 +131,47 @@ impl Expression {
                 Ok((object, false))
             }
             Expression::Infix { left, operation, right } => {
-                Ok((evaluate_infix_expression(left, left.evaluate(environment)?.0, right.evaluate(environment)?.0, operation)?, false))
+                Ok((
+                    OwnerShip::Instance(evaluate_infix_expression(left, left.evaluate(environment)?.0.value(environment)?, right.evaluate(environment)?.0.value(environment)?, operation)?),
+                    false
+                ))
             }
             Expression::If { condition, consequence, alternative } => {
-                let condition = condition.evaluate(environment)?.0;
+                let condition = condition.evaluate(environment)?.0.value(environment)?;
                 let condition = match condition {
                     Object::Boolean(val) => val,
                     obj => bail!(InvalidTypeButFound(Token::BooleanType, obj)),
                 };
 
                 if condition {
-                    environment.create_scope();
+                    environment.stack_mut().create_scope();
                     let result = consequence.evaluate(environment);
-                    environment.drop_scope();
+                    environment.stack_mut().drop_scope();
                     result
                 } else {
                     if let Some(alternative) = alternative {
-                        environment.create_scope();
+                        environment.stack_mut().create_scope();
                         let result = alternative.evaluate(environment);
-                        environment.drop_scope();
+                        environment.stack_mut().drop_scope();
                         result
                     } else {
-                        Ok((Object::Null, false))
+                        Ok((OwnerShip::Instance(Object::Null), false))
                     }
                 }
             }
             Expression::While { condition, consequence } => {
-                let condition_obj = condition.evaluate(environment)?.0;
+                let condition_obj = condition.evaluate(environment)?.0.value(environment)?;
                 let mut condition_val = match condition_obj {
                     Object::Boolean(val) => val,
                     obj => bail!(InvalidTypeButFound(Token::BooleanType, obj)),
                 };
 
-                let mut result = (Object::Null, false);
+                let mut result = (OwnerShip::Instance(Object::Null), false);
 
                 while condition_val {
                     result = consequence.evaluate(environment)?;
 
-                    let condition_obj = condition.evaluate(environment)?.0;
+                    let condition_obj = condition.evaluate(environment)?.0.value(environment)?;
                     condition_val = match condition_obj {
                         Object::Boolean(val) => val,
                         obj => bail!(InvalidTypeButFound(Token::BooleanType, obj)),
@@ -171,7 +181,10 @@ impl Expression {
                 Ok(result)
             }
             Expression::Call { name, arguments } => {
-                let function = environment.search(name).ok_or(UnknownIdentifier(name.clone()))?.clone();
+                let function = environment
+                    .get(name)
+                    .ok_or(UnknownIdentifier(name.clone()))?
+                    .value(environment)?;
 
                 match function {
                     Object::Function {
@@ -179,12 +192,12 @@ impl Expression {
                         typee,
                         body,
                     } => {
-                        environment.create_scope();
+                        environment.stack_mut().create_scope();
 
                         if parameters.len() != arguments.len() { bail!(InvalidAmountOfArguments(parameters.len(), arguments.len())) }
 
                         for i in 0..parameters.len() {
-                            let val = arguments[i].evaluate(environment)?.0;
+                            let val = arguments[i].evaluate(environment)?.0.value(environment)?;
                             match val {
                                 Object::Integer(_) if parameters[i].1.equal_variant(&Token::IntegerType) => {}
                                 Object::Float(_) if parameters[i].1.equal_variant(&Token::FloatType) => {}
@@ -192,10 +205,10 @@ impl Expression {
                                 Object::Boolean(_) if parameters[i].1.equal_variant(&Token::BooleanType) => {}
                                 obj => bail!(ExpectedTypeButFound(parameters[i].1.clone(), obj)),
                             }
-                            environment.put(parameters[i].0.clone(), val);
+                            environment.stack_mut().add(parameters[i].0.clone(), OwnerShip::Instance(val));
                         }
 
-                        let mut result = body.evaluate(environment)?.0;
+                        let mut result = body.evaluate(environment)?.0.value(environment)?;
 
                         if !typee.equal_variant(&Token::NullType) {
                             match result {
@@ -210,50 +223,72 @@ impl Expression {
                             result = Object::Null;
                         }
 
-                        environment.drop_scope();
+                        environment.stack_mut().drop_scope();
 
-                        return Ok((result, false));
+                        return Ok((OwnerShip::Instance(result), false));
                     }
                     obj => bail!(CannotCall(obj.clone()))
                 }
             }
             Expression::Error { value } => {
-                Ok((Object::Error(Box::new(value.evaluate(environment)?.0)), false))
+                Ok((OwnerShip::Instance(Object::Error(Box::new(value.evaluate(environment)?.0.value(environment)?))), false))
             }
-            Expression::Assign { name, value } => {
-                if environment.search(name).is_none() { bail!(UnknownIdentifier(name.clone())) }
+            Expression::Assign { assign_to, value } => {
+                let identifier = match assign_to.evaluate(environment)?.0 {
+                    OwnerShip::Reference(ident) => {
+                        let mut identifier = ident;
+                        loop {
+                            match environment.get(&identifier).ok_or(UnknownIdentifier(identifier.clone()))? {
+                                OwnerShip::Reference(ident) => {
+                                    identifier = ident.clone();
+                                }
+                                OwnerShip::Instance(_) => break,
+                            }
+                        }
+                        identifier
+                    }
+                    _ => bail!(CannotAssignTo(assign_to.clone()))
+                };
 
-                let value = value.evaluate(environment)?.0;
-                if !environment.search(name).unwrap().equal_variant(&value) {
-                    bail!(CannotAssignDifferentType(value, environment.search(name).unwrap().clone(), name.clone()))
+                if environment.get(&identifier).is_none() { bail!(UnknownIdentifier(identifier.clone())) }
+
+                let old_ownership = environment.get(&identifier).unwrap();
+                let old = old_ownership.value(environment)?;
+                let value_ownership = value.evaluate(environment)?.0;
+                let value = value_ownership.value(environment)?;
+                if !old.equal_variant(&value) {
+                    bail!(CannotAssignDifferentType(value, old, identifier.clone()))
                 }
 
-                *(environment.search_mut(name).unwrap()) = value.clone();
+                *(environment.get_mut(&identifier).unwrap()) = value_ownership.clone();
 
-                Ok((value, false))
+                Ok((value_ownership, false))
             }
             Expression::Array { values } => {
                 let mut objs = vec![];
                 for val in values {
-                    objs.push(val.evaluate(environment)?.0);
+                    let ownership = val.evaluate(environment)?.0;
+                    let address = environment.heap_mut().set(ownership);
+                    objs.push(OwnerShip::Reference(address));
                 }
-                Ok((Object::Array(objs), false))
+                let address = environment.heap_mut().set(OwnerShip::Instance(Object::Array(objs)));
+                Ok((OwnerShip::Reference(address), false))
             }
             Expression::Block { statements } => {
                 evaluate_block(statements, false, environment)
             }
             Expression::Access { source, index } => {
                 let array = match source.clone().deref() {
-                    Expression::Identifier { name } => environment.search(name).ok_or(UnknownIdentifier(name.clone()))?.clone(),
+                    Expression::Identifier { name } => environment.get(name).ok_or(UnknownIdentifier(name.clone()))?.clone(),
                     _ => source.evaluate(environment)?.0,
                 };
 
-                let array = match array {
+                let array = match array.value(environment)? {
                     Object::Array(array) => array,
                     _ => bail!(CannotArrayAccess(source.clone()))
                 };
 
-                let index_obj = index.evaluate(environment)?.0;
+                let index_obj = index.evaluate(environment)?.0.value(environment)?;
                 let index_val = match index_obj {
                     Object::Integer(val) => val,
                     _ => bail!(CannotAccessArrayWith(index.clone()))

@@ -160,6 +160,7 @@ impl Parser {
             Token::Boolean(value) => Expression::Boolean { value },
             Token::Subtract => self.parse_prefix_expression(Token::Subtract)?,
             Token::Invert => self.parse_prefix_expression(Token::Invert)?,
+            Token::SingleAnd => self.parse_prefix_expression(Token::SingleAnd)?,
             Token::LParent => self.parse_grouped_expression()?,
             Token::If => self.parse_if_expression()?,
             Token::While => self.parse_while_expression()?,
@@ -248,15 +249,10 @@ impl Parser {
     }
 
     pub fn parse_assign_expression(&mut self, left: Expression) -> anyhow::Result<Expression> {
-        let name = match left {
-            Expression::Identifier { name } => name,
-            expr => bail!(ExpectedButFoundExpression("Identifier".to_string(), expr))
-        };
-
         let value = Box::new(self.parse_expression(Precedences::Lowest)?);
 
         Ok(Expression::Assign {
-            name,
+            assign_to: Box::new(left),
             value,
         })
     }

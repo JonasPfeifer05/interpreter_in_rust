@@ -46,5 +46,7 @@ pub enum EvalError {
     #[error("Passed invalid amount of arguments! Expected {0} found {1}!")]
     InvalidAmountOfArguments(usize,usize),
     #[error("Expected type {0:?} but found {1:?}!")]
-    ExpectedTypeButFound(Token, Object)
+    ExpectedTypeButFound(Token, Object),
+    #[error("You cannot assign to {0:?}!")]
+    CannotAssignTo(Box<Expression>)
 }

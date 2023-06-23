@@ -35,6 +35,8 @@ pub enum Token {
     Divide,
     Modular,
 
+    SingleAnd,
+
     Invert,
     And,
     Or,

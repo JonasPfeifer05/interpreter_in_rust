@@ -1,7 +1,7 @@
 use anyhow::bail;
 use crate::error::EvalError::{InvalidType, InvalidTypeButFound};
 use crate::evaluator::environment::Environment;
-use crate::evaluator::object::Object;
+use crate::evaluator::object::{Object, OwnerShip};
 use crate::lexer::token::Token;
 use crate::parser::ast::expression::Expression;
 
@@ -29,14 +29,15 @@ pub enum Statement {
 }
 
 impl Statement {
-    pub fn evaluate(&self, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
+    pub fn evaluate(&self, environment: &mut Environment) -> anyhow::Result<(OwnerShip, bool)> {
         match self {
             Statement::Let {
                 name,
                 typee,
                 value,
             } => {
-                let (value, _) = value.evaluate(environment)?;
+                let (value_ownership, _) = value.evaluate(environment)?;
+                let value = value_ownership.value(environment)?;
                 match value {
                     Object::Integer(_) => if !typee.equal_variant(&Token::IntegerType) { bail!(InvalidType(typee.clone(), Token::IntegerType)) }
                     Object::Float(_) => if !typee.equal_variant(&Token::FloatType) { bail!(InvalidType(typee.clone(), Token::FloatType)) }
@@ -46,8 +47,8 @@ impl Statement {
                     Object::Error(_) => {}
                     obj => bail!(InvalidTypeButFound(typee.clone(), obj)),
                 }
-                environment.put(name.to_string(), value.clone());
-                Ok((value, false))
+                environment.stack_mut().add(name.to_string(), value_ownership.clone());
+                Ok((value_ownership, false))
             }
             Statement::Return {
                 value
@@ -66,12 +67,12 @@ impl Statement {
                 typee,
                 body,
             } => {
-                environment.put(name.clone(), Object::Function {
+                environment.stack_mut().add(name.clone(), OwnerShip::Instance(Object::Function {
                    typee: typee.clone(),
                     parameters: parameter.clone(),
                     body: body.clone()
-                });
-                Ok((Object::Null, false))
+                }));
+                Ok((OwnerShip::Instance(Object::Null), false))
             }
         }
     }

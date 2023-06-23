@@ -4,7 +4,7 @@ pub mod environment;
 use std::vec::IntoIter;
 use clap::builder::EnumValueParser;
 use crate::evaluator::environment::Environment;
-use crate::evaluator::object::Object;
+use crate::evaluator::object::{Object, OwnerShip};
 use crate::parser::ast::statement::Statement;
 
 pub struct Evaluator {
@@ -26,8 +26,8 @@ impl Evaluator {
     }
 }
 
-pub fn evaluate_block(statements: &Vec<Box<Statement>>, remove_ret: bool, environment: &mut Environment) -> anyhow::Result<(Object, bool)> {
-    let mut result = (Object::Null, false);
+pub fn evaluate_block(statements: &Vec<Box<Statement>>, remove_ret: bool, environment: &mut Environment) -> anyhow::Result<(OwnerShip, bool)> {
+    let mut result = (OwnerShip::Instance(Object::Null), false);
     for statement in statements {
         result = statement.evaluate(environment)?;
         if result.1 { break }

@@ -94,9 +94,11 @@ impl Lexer {
                     self.program.next();
                     Token::NotEqual
                 } else { Token::Invert },
-                '&' if matches!(self.program.peek(), Some(&'&')) => {
+                '&' => if matches!(self.program.peek(), Some(&'&')) {
                     self.program.next();
                     Token::And
+                } else {
+                    Token::SingleAnd
                 }
                 '|' if matches!(self.program.peek(), Some(&'|')) => {
                     self.program.next();
